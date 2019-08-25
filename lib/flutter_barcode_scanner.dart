@@ -62,4 +62,10 @@ class FlutterBarcodeScanner {
     }
     return _onBarcodeReceiver;
   }
+
+  static void closeBarcodeScanner() {
+    /// Invoke method to open camera
+    /// and then create event channel which will return stream
+    _channel.invokeMethod('closeBarcodeScanner');
+  }
 }
