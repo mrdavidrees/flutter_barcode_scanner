@@ -29,14 +29,13 @@ import io.flutter.plugin.common.PluginRegistry;
 import io.flutter.plugin.common.PluginRegistry.ActivityResultListener;
 import io.flutter.plugin.common.EventChannel.StreamHandler;
 
-
 /**
  * FlutterBarcodeScannerPlugin
  */
 public class FlutterBarcodeScannerPlugin implements MethodCallHandler, ActivityResultListener, StreamHandler {
     private static final String CHANNEL = "flutter_barcode_scanner";
     private static final int REQUEST_CODE_CAMERA_PERMISSION = 3777;
-    private static FlutterBarcodeScannerPlugin instance;
+    public static FlutterBarcodeScannerPlugin instance;
 
     private static FlutterActivity activity;
     private static Result pendingResult;
@@ -52,50 +51,50 @@ public class FlutterBarcodeScannerPlugin implements MethodCallHandler, ActivityR
     private Application.ActivityLifecycleCallbacks activityLifecycleCallbacks;
     private final PluginRegistry.Registrar registrar;
 
+    public BarcodeCaptureActivity captureActivity;
+
     private FlutterBarcodeScannerPlugin(FlutterActivity activity, final PluginRegistry.Registrar registrar) {
         FlutterBarcodeScannerPlugin.activity = activity;
         this.registrar = registrar;
 
-        activityLifecycleCallbacks =
-                new Application.ActivityLifecycleCallbacks() {
-                    @Override
-                    public void onActivityCreated(Activity activity, Bundle savedInstanceState) {
-                    }
+        activityLifecycleCallbacks = new Application.ActivityLifecycleCallbacks() {
+            @Override
+            public void onActivityCreated(Activity activity, Bundle savedInstanceState) {
+            }
 
-                    @Override
-                    public void onActivityStarted(Activity activity) {
-                    }
+            @Override
+            public void onActivityStarted(Activity activity) {
+            }
 
-                    @Override
-                    public void onActivityResumed(Activity activity) {
-                    }
+            @Override
+            public void onActivityResumed(Activity activity) {
+            }
 
-                    @Override
-                    public void onActivityPaused(Activity activity) {
-                    }
+            @Override
+            public void onActivityPaused(Activity activity) {
+            }
 
-                    @Override
-                    public void onActivitySaveInstanceState(Activity activity, Bundle outState) {
-                        if (activity == registrar.activity()) {
-                            // TODO
-                        }
-                    }
+            @Override
+            public void onActivitySaveInstanceState(Activity activity, Bundle outState) {
+                if (activity == registrar.activity()) {
+                    // TODO
+                }
+            }
 
-                    @Override
-                    public void onActivityDestroyed(Activity activity) {
-                        if (activity == registrar.activity()) {
-                            ((Application) registrar.context()).unregisterActivityLifecycleCallbacks(this);
-                        }
-                    }
+            @Override
+            public void onActivityDestroyed(Activity activity) {
+                if (activity == registrar.activity()) {
+                    ((Application) registrar.context()).unregisterActivityLifecycleCallbacks(this);
+                }
+            }
 
-                    @Override
-                    public void onActivityStopped(Activity activity) {
-                    }
-                };
+            @Override
+            public void onActivityStopped(Activity activity) {
+            }
+        };
 
         if (this.registrar != null) {
-            ((Application) this.registrar.context())
-                    .registerActivityLifecycleCallbacks(activityLifecycleCallbacks);
+            ((Application) this.registrar.context()).registerActivityLifecycleCallbacks(activityLifecycleCallbacks);
         }
     }
 
@@ -111,8 +110,7 @@ public class FlutterBarcodeScannerPlugin implements MethodCallHandler, ActivityR
         registrar.addActivityResultListener(instance);
         channel.setMethodCallHandler(instance);
 
-        final EventChannel eventChannel =
-                new EventChannel(registrar.messenger(), "flutter_barcode_scanner_receiver");
+        final EventChannel eventChannel = new EventChannel(registrar.messenger(), "flutter_barcode_scanner_receiver");
         eventChannel.setStreamHandler(instance);
     }
 
@@ -134,9 +132,10 @@ public class FlutterBarcodeScannerPlugin implements MethodCallHandler, ActivityR
                 isContinuousScan = (boolean) arguments.get("isContinuousScan");
 
                 startBarcodeScannerActivityView((String) arguments.get("cancelButtonText"), isContinuousScan);
-            }
-            else if (call.method.equals("closeBarcodeScanner")) {
-                activity.finish();
+            } else if (call.method.equals("closeBarcodeScanner")) {
+                if (this.captureActivity != null) {
+                    this.captureActivity.finish();
+                }
             }
         } catch (Exception e) {
             Log.e(TAG, "onMethodCall: " + e.getLocalizedMessage());
@@ -155,7 +154,6 @@ public class FlutterBarcodeScannerPlugin implements MethodCallHandler, ActivityR
             Log.e(TAG, "startView: " + e.getLocalizedMessage());
         }
     }
-
 
     /**
      * Get the barcode scanning results in onActivityResult
@@ -189,7 +187,6 @@ public class FlutterBarcodeScannerPlugin implements MethodCallHandler, ActivityR
         }
         return false;
     }
-
 
     @Override
     public void onListen(Object o, EventChannel.EventSink eventSink) {

@@ -45,10 +45,10 @@ import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.Toast;
 
-
 import com.amolg.flutterbarcodescanner.camera.CameraSource;
 import com.amolg.flutterbarcodescanner.camera.CameraSourcePreview;
 import com.amolg.flutterbarcodescanner.camera.GraphicOverlay;
+import com.amolg.flutterbarcodescanner.FlutterBarcodeScannerPlugin;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GoogleApiAvailability;
 import com.google.android.gms.common.api.CommonStatusCodes;
@@ -59,11 +59,12 @@ import com.google.android.gms.vision.barcode.BarcodeDetector;
 import java.io.IOException;
 
 /**
- * Activity for the multi-tracker app.  This app detects barcodes and displays the value with the
- * rear facing camera. During detection overlay graphics are drawn to indicate the position,
- * size, and ID of each barcode.
+ * Activity for the multi-tracker app. This app detects barcodes and displays
+ * the value with the rear facing camera. During detection overlay graphics are
+ * drawn to indicate the position, size, and ID of each barcode.
  */
-public final class BarcodeCaptureActivity extends AppCompatActivity implements BarcodeGraphicTracker.BarcodeUpdateListener, View.OnClickListener {
+public final class BarcodeCaptureActivity extends AppCompatActivity
+        implements BarcodeGraphicTracker.BarcodeUpdateListener, View.OnClickListener {
 
     // intent request code to handle updating play services if needed.
     private static final int RC_HANDLE_GMS = 9001;
@@ -88,8 +89,7 @@ public final class BarcodeCaptureActivity extends AppCompatActivity implements B
     private Button btnBarcodeCaptureCancel;
 
     enum USE_FLASH {
-        ON,
-        OFF
+        ON, OFF
     }
 
     private int flashStatus = USE_FLASH.OFF.ordinal();
@@ -100,6 +100,9 @@ public final class BarcodeCaptureActivity extends AppCompatActivity implements B
     @Override
     public void onCreate(Bundle icicle) {
         super.onCreate(icicle);
+
+        FlutterBarcodeScannerPlugin.instance.captureActivity = this;
+
         try {
             setContentView(R.layout.barcode_capture);
             String buttonText = "";
@@ -114,7 +117,8 @@ public final class BarcodeCaptureActivity extends AppCompatActivity implements B
             btnBarcodeCaptureCancel.setText(buttonText);
             btnBarcodeCaptureCancel.setOnClickListener(this);
             imgViewBarcodeCaptureUseFlash.setOnClickListener(this);
-            imgViewBarcodeCaptureUseFlash.setVisibility(FlutterBarcodeScannerPlugin.isShowFlashIcon ? View.VISIBLE : View.GONE);
+            imgViewBarcodeCaptureUseFlash
+                    .setVisibility(FlutterBarcodeScannerPlugin.isShowFlashIcon ? View.VISIBLE : View.GONE);
             mPreview = findViewById(R.id.preview);
             mGraphicOverlay = findViewById(R.id.graphicOverlay);
 
@@ -122,7 +126,7 @@ public final class BarcodeCaptureActivity extends AppCompatActivity implements B
             boolean autoFocus = true;
             boolean useFlash = false;
 
-            // Check for the camera permission before accessing the camera.  If the
+            // Check for the camera permission before accessing the camera. If the
             // permission is not granted yet, request permission.
             int rc = ActivityCompat.checkSelfPermission(this, Manifest.permission.CAMERA);
             if (rc == PackageManager.PERMISSION_GRANTED) {
@@ -138,15 +142,13 @@ public final class BarcodeCaptureActivity extends AppCompatActivity implements B
     }
 
     /**
-     * Handles the requesting of the camera permission.  This includes
-     * showing a "Snackbar" message of why the permission is needed then
-     * sending the request.
+     * Handles the requesting of the camera permission. This includes showing a
+     * "Snackbar" message of why the permission is needed then sending the request.
      */
     private void requestCameraPermission() {
-        final String[] permissions = new String[]{Manifest.permission.CAMERA};
+        final String[] permissions = new String[] { Manifest.permission.CAMERA };
 
-        if (!ActivityCompat.shouldShowRequestPermissionRationale(this,
-                Manifest.permission.CAMERA)) {
+        if (!ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.CAMERA)) {
             ActivityCompat.requestPermissions(this, permissions, RC_HANDLE_CAMERA_PERM);
             return;
         }
@@ -156,16 +158,13 @@ public final class BarcodeCaptureActivity extends AppCompatActivity implements B
         View.OnClickListener listener = new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                ActivityCompat.requestPermissions(thisActivity, permissions,
-                        RC_HANDLE_CAMERA_PERM);
+                ActivityCompat.requestPermissions(thisActivity, permissions, RC_HANDLE_CAMERA_PERM);
             }
         };
 
         findViewById(R.id.topLayout).setOnClickListener(listener);
-        Snackbar.make(mGraphicOverlay, R.string.permission_camera_rationale,
-                Snackbar.LENGTH_INDEFINITE)
-                .setAction(R.string.ok, listener)
-                .show();
+        Snackbar.make(mGraphicOverlay, R.string.permission_camera_rationale, Snackbar.LENGTH_INDEFINITE)
+                .setAction(R.string.ok, listener).show();
     }
 
     @Override
@@ -178,28 +177,31 @@ public final class BarcodeCaptureActivity extends AppCompatActivity implements B
     }
 
     /**
-     * Creates and starts the camera.  Note that this uses a higher resolution in comparison
-     * to other detection examples to enable the barcode detector to detect small barcodes
-     * at long distances.
+     * Creates and starts the camera. Note that this uses a higher resolution in
+     * comparison to other detection examples to enable the barcode detector to
+     * detect small barcodes at long distances.
      * <p>
-     * Suppressing InlinedApi since there is a check that the minimum version is met before using
-     * the constant.
+     * Suppressing InlinedApi since there is a check that the minimum version is met
+     * before using the constant.
      */
     @SuppressLint("InlinedApi")
     private void createCameraSource(boolean autoFocus, boolean useFlash) {
         Context context = getApplicationContext();
 
-        // A barcode detector is created to track barcodes.  An associated multi-processor instance
-        // is set to receive the barcode detection results, track the barcodes, and maintain
-        // graphics for each barcode on screen.  The factory is used by the multi-processor to
+        // A barcode detector is created to track barcodes. An associated
+        // multi-processor instance
+        // is set to receive the barcode detection results, track the barcodes, and
+        // maintain
+        // graphics for each barcode on screen. The factory is used by the
+        // multi-processor to
         // create a separate tracker instance for each barcode.
         BarcodeDetector barcodeDetector = new BarcodeDetector.Builder(context).build();
         BarcodeTrackerFactory barcodeFactory = new BarcodeTrackerFactory(mGraphicOverlay, this);
-        barcodeDetector.setProcessor(
-                new MultiProcessor.Builder<>(barcodeFactory).build());
+        barcodeDetector.setProcessor(new MultiProcessor.Builder<>(barcodeFactory).build());
 
         if (!barcodeDetector.isOperational()) {
-            // Check for low storage.  If there is low storage, the native library will not be
+            // Check for low storage. If there is low storage, the native library will not
+            // be
             // downloaded, so detection will not become operational.
             IntentFilter lowstorageFilter = new IntentFilter(Intent.ACTION_DEVICE_STORAGE_LOW);
             boolean hasLowStorage = registerReceiver(null, lowstorageFilter) != null;
@@ -209,23 +211,20 @@ public final class BarcodeCaptureActivity extends AppCompatActivity implements B
             }
         }
 
-        // Creates and starts the camera.  Note that this uses a higher resolution in comparison
-        // to other detection examples to enable the barcode detector to detect small barcodes
+        // Creates and starts the camera. Note that this uses a higher resolution in
+        // comparison
+        // to other detection examples to enable the barcode detector to detect small
+        // barcodes
         // at long distances.
         CameraSource.Builder builder = new CameraSource.Builder(getApplicationContext(), barcodeDetector)
-                .setFacing(CameraSource.CAMERA_FACING_BACK)
-                .setRequestedPreviewSize(1600, 1024)
-                .setRequestedFps(15.0f);
+                .setFacing(CameraSource.CAMERA_FACING_BACK).setRequestedPreviewSize(1600, 1024).setRequestedFps(15.0f);
 
         // make sure that auto focus is an available option
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH) {
-            builder = builder.setFocusMode(
-                    autoFocus ? Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE : null);
+            builder = builder.setFocusMode(autoFocus ? Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE : null);
         }
 
-        mCameraSource = builder
-                .setFlashMode(useFlash ? Camera.Parameters.FLASH_MODE_TORCH : null)
-                .build();
+        mCameraSource = builder.setFlashMode(useFlash ? Camera.Parameters.FLASH_MODE_TORCH : null).build();
     }
 
     /**
@@ -249,8 +248,8 @@ public final class BarcodeCaptureActivity extends AppCompatActivity implements B
     }
 
     /**
-     * Releases the resources associated with the camera source, the associated detectors, and the
-     * rest of the processing pipeline.
+     * Releases the resources associated with the camera source, the associated
+     * detectors, and the rest of the processing pipeline.
      */
     @Override
     protected void onDestroy() {
@@ -261,25 +260,25 @@ public final class BarcodeCaptureActivity extends AppCompatActivity implements B
     }
 
     /**
-     * Callback for the result from requesting permissions. This method
-     * is invoked for every call on {@link #requestPermissions(String[], int)}.
+     * Callback for the result from requesting permissions. This method is invoked
+     * for every call on {@link #requestPermissions(String[], int)}.
      * <p>
-     * <strong>Note:</strong> It is possible that the permissions request interaction
-     * with the user is interrupted. In this case you will receive empty permissions
-     * and results arrays which should be treated as a cancellation.
+     * <strong>Note:</strong> It is possible that the permissions request
+     * interaction with the user is interrupted. In this case you will receive empty
+     * permissions and results arrays which should be treated as a cancellation.
      * </p>
      *
-     * @param requestCode  The request code passed in {@link #requestPermissions(String[], int)}.
+     * @param requestCode  The request code passed in
+     *                     {@link #requestPermissions(String[], int)}.
      * @param permissions  The requested permissions. Never null.
-     * @param grantResults The grant results for the corresponding permissions
-     *                     which is either {@link PackageManager#PERMISSION_GRANTED}
-     *                     or {@link PackageManager#PERMISSION_DENIED}. Never null.
+     * @param grantResults The grant results for the corresponding permissions which
+     *                     is either {@link PackageManager#PERMISSION_GRANTED} or
+     *                     {@link PackageManager#PERMISSION_DENIED}. Never null.
      * @see #requestPermissions(String[], int)
      */
     @Override
-    public void onRequestPermissionsResult(int requestCode,
-                                           @NonNull String[] permissions,
-                                           @NonNull int[] grantResults) {
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
+            @NonNull int[] grantResults) {
         if (requestCode != RC_HANDLE_CAMERA_PERM) {
             super.onRequestPermissionsResult(requestCode, permissions, grantResults);
             return;
@@ -300,21 +299,18 @@ public final class BarcodeCaptureActivity extends AppCompatActivity implements B
         };
 
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle("Allow permissions")
-                .setMessage(R.string.no_camera_permission)
-                .setPositiveButton(R.string.ok, listener)
-                .show();
+        builder.setTitle("Allow permissions").setMessage(R.string.no_camera_permission)
+                .setPositiveButton(R.string.ok, listener).show();
     }
 
     /**
-     * Starts or restarts the camera source, if it exists.  If the camera source doesn't exist yet
-     * (e.g., because onResume was called before the camera source was created), this will be called
-     * again when the camera source is created.
+     * Starts or restarts the camera source, if it exists. If the camera source
+     * doesn't exist yet (e.g., because onResume was called before the camera source
+     * was created), this will be called again when the camera source is created.
      */
     private void startCameraSource() throws SecurityException {
         // check that the device has play services available.
-        int code = GoogleApiAvailability.getInstance().isGooglePlayServicesAvailable(
-                getApplicationContext());
+        int code = GoogleApiAvailability.getInstance().isGooglePlayServicesAvailable(getApplicationContext());
         if (code != ConnectionResult.SUCCESS) {
             Dialog dlg = GoogleApiAvailability.getInstance().getErrorDialog(this, code, RC_HANDLE_GMS);
             dlg.show();
@@ -356,7 +352,7 @@ public final class BarcodeCaptureActivity extends AppCompatActivity implements B
             }
             float dx = x - barcode.getBoundingBox().centerX();
             float dy = y - barcode.getBoundingBox().centerY();
-            float distance = (dx * dx) + (dy * dy);  // actually squared distance
+            float distance = (dx * dx) + (dy * dy); // actually squared distance
             if (distance < bestDistance) {
                 best = barcode;
                 bestDistance = distance;
@@ -376,8 +372,8 @@ public final class BarcodeCaptureActivity extends AppCompatActivity implements B
     @Override
     public void onClick(View v) {
         int i = v.getId();
-        if (i == R.id.imgViewBarcodeCaptureUseFlash &&
-                getPackageManager().hasSystemFeature(PackageManager.FEATURE_CAMERA_FLASH)) {
+        if (i == R.id.imgViewBarcodeCaptureUseFlash
+                && getPackageManager().hasSystemFeature(PackageManager.FEATURE_CAMERA_FLASH)) {
 
             try {
                 if (flashStatus == USE_FLASH.OFF.ordinal()) {
@@ -409,17 +405,16 @@ public final class BarcodeCaptureActivity extends AppCompatActivity implements B
     private class ScaleListener implements ScaleGestureDetector.OnScaleGestureListener {
 
         /**
-         * Responds to scaling events for a gesture in progress.
-         * Reported by pointer motion.
+         * Responds to scaling events for a gesture in progress. Reported by pointer
+         * motion.
          *
-         * @param detector The detector reporting the event - use this to
-         *                 retrieve extended info about event state.
-         * @return Whether or not the detector should consider this event
-         * as handled. If an event was not handled, the detector
-         * will continue to accumulate movement until an event is
-         * handled. This can be useful if an application, for example,
-         * only wants to update scaling factors if the change is
-         * greater than 0.01.
+         * @param detector The detector reporting the event - use this to retrieve
+         *                 extended info about event state.
+         * @return Whether or not the detector should consider this event as handled. If
+         *         an event was not handled, the detector will continue to accumulate
+         *         movement until an event is handled. This can be useful if an
+         *         application, for example, only wants to update scaling factors if the
+         *         change is greater than 0.01.
          */
         @Override
         public boolean onScale(ScaleGestureDetector detector) {
@@ -427,16 +422,15 @@ public final class BarcodeCaptureActivity extends AppCompatActivity implements B
         }
 
         /**
-         * Responds to the beginning of a scaling gesture. Reported by
-         * new pointers going down.
+         * Responds to the beginning of a scaling gesture. Reported by new pointers
+         * going down.
          *
-         * @param detector The detector reporting the event - use this to
-         *                 retrieve extended info about event state.
-         * @return Whether or not the detector should continue recognizing
-         * this gesture. For example, if a gesture is beginning
-         * with a focal point outside of a region where it makes
-         * sense, onScaleBegin() may return false to ignore the
-         * rest of the gesture.
+         * @param detector The detector reporting the event - use this to retrieve
+         *                 extended info about event state.
+         * @return Whether or not the detector should continue recognizing this gesture.
+         *         For example, if a gesture is beginning with a focal point outside of
+         *         a region where it makes sense, onScaleBegin() may return false to
+         *         ignore the rest of the gesture.
          */
         @Override
         public boolean onScaleBegin(ScaleGestureDetector detector) {
@@ -444,15 +438,15 @@ public final class BarcodeCaptureActivity extends AppCompatActivity implements B
         }
 
         /**
-         * Responds to the end of a scale gesture. Reported by existing
-         * pointers going up.
+         * Responds to the end of a scale gesture. Reported by existing pointers going
+         * up.
          * <p/>
-         * Once a scale has ended, {@link ScaleGestureDetector#getFocusX()}
-         * and {@link ScaleGestureDetector#getFocusY()} will return focal point
-         * of the pointers remaining on the screen.
+         * Once a scale has ended, {@link ScaleGestureDetector#getFocusX()} and
+         * {@link ScaleGestureDetector#getFocusY()} will return focal point of the
+         * pointers remaining on the screen.
          *
-         * @param detector The detector reporting the event - use this to
-         *                 retrieve extended info about event state.
+         * @param detector The detector reporting the event - use this to retrieve
+         *                 extended info about event state.
          */
         @Override
         public void onScaleEnd(ScaleGestureDetector detector) {
